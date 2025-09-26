@@ -41,6 +41,7 @@ typedef struct Network {
     Connection* c;
     size_t n_size;
     size_t c_size;
+    double training_size; // rate of change of connections and biases of neurons in training
 } Network;
 
 // apply sigmoid function to A.totalsum into A.value and update A.evaluated to 1 (true);
@@ -79,6 +80,22 @@ void doAll(Network* net) {
     for (size_t i = 0; i<net->n_size; i++) {
         if (net->n[i].type == Output) evaluateNeuron(&net->n[i]);
     }
+}
+
+// get the change in result of a connection's action as weight is changed
+double getConnectionChange(Network* net, Connection* A) {
+    // evaluate before test
+    if (!A->fromNeu->evaluated && A->fromNeu->type != Input) {
+        evaluateNeuron(A);
+    }
+    // get primary result
+    double val0 = A->fromNeu->value * A->weight;
+    // get secondary result
+    A->weight += net->training_size;
+    double val1 = A->fromNeu->value * A->weight;
+
+    A->weight -= net->training_size;
+    return val1 - val0;
 }
 
 // ==== MISC ====
